@@ -297,6 +297,11 @@ if uploaded_file is not None:
             if st.session_state.df_calc is not None:
                 df_calc = st.session_state.df_calc
 
+                # Check if we have data
+                if len(df_calc) == 0:
+                    st.error("No data available after filtering. Please adjust your filters or upload different data.")
+                    st.stop()
+
                 # Calculate all metrics
                 total_abatement = df_calc['abatement'].sum()
                 total_cost = (df_calc['abatement'] * df_calc['cost']).sum()
@@ -306,7 +311,7 @@ if uploaded_file is not None:
                     icp = total_cost / total_abatement if total_abatement > 0 else 0
                     icp_description = "Weighted average cost across all abatement measures"
                 elif calculation_method == "Simple Average":
-                    icp = df_calc['cost'].mean()
+                    icp = df_calc['cost'].mean() if len(df_calc) > 0 else 0
                     icp_description = "Simple average of all measure costs"
                 else:  # Marginal Cost
                     icp = df_calc['cost'].iloc[-1] if len(df_calc) > 0 else 0
@@ -316,11 +321,11 @@ if uploaded_file is not None:
                 spc = df_calc['cost'].iloc[-1] if len(df_calc) > 0 else 0
 
                 # Implicit Carbon Price
-                implicit_price = df_calc['cost'].median()
+                implicit_price = df_calc['cost'].median() if len(df_calc) > 0 else 0
 
                 # Additional metrics
-                mean_cost = df_calc['cost'].mean()
-                std_cost = df_calc['cost'].std()
+                mean_cost = df_calc['cost'].mean() if len(df_calc) > 0 else 0
+                std_cost = df_calc['cost'].std() if len(df_calc) > 1 else 0
 
                 # Display main metrics
                 st.subheader("Primary Carbon Pricing Indicators")
@@ -464,6 +469,10 @@ if uploaded_file is not None:
 
             if st.session_state.df_calc is not None:
                 df_calc = st.session_state.df_calc
+
+                if len(df_calc) == 0:
+                    st.error("No data available after filtering. Please adjust your filters or upload different data.")
+                    st.stop()
 
                 # MACC visualization options
                 col1, col2, col3 = st.columns(3)
@@ -631,6 +640,10 @@ if uploaded_file is not None:
             if st.session_state.df_calc is not None:
                 df_calc = st.session_state.df_calc
 
+                if len(df_calc) == 0:
+                    st.error("No data available after filtering. Please adjust your filters or upload different data.")
+                    st.stop()
+
                 st.markdown("""
                 Analyze different scenarios by setting carbon price targets or abatement goals.
                 This helps identify which measures are cost-effective under different carbon pricing regimes.
@@ -660,18 +673,21 @@ if uploaded_file is not None:
                     col1, col2, col3, col4 = st.columns(4)
 
                     with col1:
+                        viable_pct = (len(viable_measures)/len(df_calc)*100) if len(df_calc) > 0 else 0
                         st.metric(
                             "Viable Measures",
                             len(viable_measures),
-                            f"{len(viable_measures)/len(df_calc)*100:.1f}% of total"
+                            f"{viable_pct:.1f}% of total"
                         )
 
                     with col2:
                         viable_abatement = viable_measures['abatement'].sum()
+                        total_abatement = df_calc['abatement'].sum()
+                        viable_abatement_pct = (viable_abatement/total_abatement*100) if total_abatement > 0 else 0
                         st.metric(
                             "Total Abatement",
                             f"{viable_abatement:,.0f} {co2_unit}",
-                            f"{viable_abatement/df_calc['abatement'].sum()*100:.1f}% of total"
+                            f"{viable_abatement_pct:.1f}% of total"
                         )
 
                     with col3:
@@ -768,10 +784,11 @@ if uploaded_file is not None:
                     col1, col2, col3, col4 = st.columns(4)
 
                     with col1:
+                        needed_pct = (len(needed_measures)/len(df_calc)*100) if len(df_calc) > 0 else 0
                         st.metric(
                             "Measures Required",
                             len(needed_measures),
-                            f"{len(needed_measures)/len(df_calc)*100:.1f}% of total"
+                            f"{needed_pct:.1f}% of total"
                         )
 
                     with col2:
@@ -875,7 +892,8 @@ if uploaded_file is not None:
                     })
 
                 scenario_df = pd.DataFrame(scenario_results)
-                scenario_df['Abatement %'] = (scenario_df['Abatement'] / df_calc['abatement'].sum() * 100).round(1)
+                total_abatement = df_calc['abatement'].sum()
+                scenario_df['Abatement %'] = ((scenario_df['Abatement'] / total_abatement * 100) if total_abatement > 0 else 0).round(1)
 
                 st.dataframe(scenario_df, use_container_width=True, hide_index=True)
 
@@ -904,6 +922,10 @@ if uploaded_file is not None:
 
             if st.session_state.df_calc is not None:
                 df_calc = st.session_state.df_calc
+
+                if len(df_calc) == 0:
+                    st.error("No data available after filtering. Please adjust your filters or upload different data.")
+                    st.stop()
 
                 # Correlation analysis
                 st.subheader("Correlation Analysis")
@@ -1090,6 +1112,10 @@ if uploaded_file is not None:
 
             if st.session_state.df_calc is not None:
                 df_calc = st.session_state.df_calc
+
+                if len(df_calc) == 0:
+                    st.error("No data available after filtering. Please adjust your filters or upload different data.")
+                    st.stop()
 
                 st.subheader("Report Summary")
 
